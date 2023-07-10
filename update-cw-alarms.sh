@@ -22,3 +22,18 @@ for alarm_name in $alarm_names; do
     --alarm-description "Updated alarm for $NEW_INSTANCE_ID with AMI $NEW_AMI_ID" \
     --dimensions Name=InstanceId,Value="$NEW_INSTANCE_ID" Name=ImageId,Value="$NEW_AMI_ID"
 done
+
+# Verify the alarms have been updated
+for alarm_name in $alarm_names; do
+  updated_alarm=$(aws cloudwatch describe-alarms \
+    --region "$AWS_REGION" \
+    --alarm-names "$alarm_name" \
+    --query "MetricAlarms[?Dimensions[?Name=='InstanceId'&&Value=='$NEW_INSTANCE_ID']&&Dimensions[?Name=='ImageId'&&Value=='$NEW_AMI_ID']].AlarmName" \
+    --output text)
+
+  if [[ "$updated_alarm" == "$alarm_name" ]]; then
+    echo "Alarm $alarm_name has been successfully updated with the new AMI and instance ID."
+  else
+    echo "Alarm $alarm_name failed to update with the new AMI and instance ID."
+  fi
+done
